@@ -5,14 +5,15 @@ import { FusionBridge } from "../bridge/fusion-bridge.js";
 export function registerSketchTools(server: McpServer, bridge: FusionBridge): void {
 
   server.registerTool("fusion_create_sketch", {
-    description: "Create a new sketch on a construction plane or planar face",
+    description: "Create a new sketch on a standard plane, construction plane, or planar face",
     inputSchema: {
       plane: z.enum(["xy", "xz", "yz"]).optional().describe("Standard construction plane"),
-      faceId: z.string().optional().describe("Planar face ID to sketch on (alternative to plane)"),
+      constructionPlaneId: z.string().optional().describe("Construction plane name or ID (e.g. 'Plane1' from offset/angle tools)"),
+      faceId: z.string().optional().describe("Planar face ID to sketch on"),
       componentId: z.string().optional().describe("Component ID (defaults to root)"),
     },
-  }, async ({ plane, faceId, componentId }) => {
-    const result = await bridge.call("sketch.create", { plane, faceId, componentId });
+  }, async (args) => {
+    const result = await bridge.call("sketch.create", args);
     return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
   });
 

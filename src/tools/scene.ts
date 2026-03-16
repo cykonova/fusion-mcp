@@ -19,12 +19,13 @@ export function registerSceneTools(server: McpServer, bridge: FusionBridge): voi
   });
 
   server.registerTool("fusion_list_bodies", {
-    description: "List all bodies in a component (name, ID, volume, bounding box)",
+    description: "List all bodies in a component (name, ID, volume, bounding box). Use includeFaces to get face entity tokens needed for shell and other face-based operations.",
     inputSchema: {
       componentId: z.string().optional().describe("Component ID (defaults to root component)"),
+      includeFaces: z.boolean().optional().describe("Include face details (entity tokens, area, geometry type, centroid) for each body"),
     },
-  }, async ({ componentId }) => {
-    const result = await bridge.call("component.listBodies", { componentId });
+  }, async ({ componentId, includeFaces }) => {
+    const result = await bridge.call("component.listBodies", { componentId, includeFaces });
     return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
   });
 

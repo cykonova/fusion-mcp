@@ -10,7 +10,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "deploy-addin": "rsync -av --delete companion-addin/ \"$HOME/Library/Application Support/Autodesk/Autodesk Fusion 360/API/AddIns/FusionMCPBridge/\""
   },
   "keywords": ["mcp", "fusion360", "cad", "autodesk"],
   "license": "MIT",

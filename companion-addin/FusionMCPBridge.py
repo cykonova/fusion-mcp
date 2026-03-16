@@ -25,6 +25,7 @@ _http_thread: threading.Thread = None
 _work_queue: queue.Queue = None
 _custom_event: adsk.core.CustomEvent = None
 _stop_event = threading.Event()
+_handlers_pkg = None  # reloaded handlers package reference
 
 CUSTOM_EVENT_ID = "FusionMCPBridgeEvent"
 HTTP_PORT = 8765
@@ -154,15 +155,13 @@ def _timer_loop():
 
 def _dispatch(method: str, params: dict) -> dict:
     """Route a method string to the appropriate handler."""
-    import handlers  # noqa: deferred import, on sys.path via Fusion add-in loader
-
     parts = method.split(".")
     if len(parts) != 2:
         return {"success": False, "error": f"Invalid method format: '{method}'. Expected 'category.action'"}
 
     category, action = parts
 
-    handler_module = getattr(handlers, category, None)
+    handler_module = getattr(_handlers_pkg, category, None)
     if handler_module is None:
         return {"success": False, "error": f"Unknown category: '{category}'"}
 
@@ -184,12 +183,22 @@ def run(context):
     _ui = _app.userInterface
     _work_queue = queue.Queue()
 
-    # Ensure our handlers package is importable
+    # Ensure our handlers package is importable and always freshly loaded
     import sys
     import os
+    import importlib
     addin_dir = os.path.dirname(os.path.realpath(__file__))
     if addin_dir not in sys.path:
         sys.path.insert(0, addin_dir)
+
+    # Force-reload handler modules so add-in restart picks up code changes
+    global _handlers_pkg
+    import handlers
+    for submod_name in handlers.__all__:
+        submod = getattr(handlers, submod_name, None)
+        if submod:
+            importlib.reload(submod)
+    _handlers_pkg = importlib.reload(handlers)
 
     try:
         # Register custom event for main-thread processing

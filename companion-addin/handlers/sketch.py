@@ -40,13 +40,53 @@ def create(app: adsk.core.Application, params: dict) -> dict:
     """Create a new sketch on a construction plane or planar face."""
     root = _get_root(app)
 
-    plane_name = params.get("plane", "xy")
+    plane_name = params.get("plane")
     face_id = params.get("faceId")
+    construction_plane_id = params.get("constructionPlaneId")
+
+    if construction_plane_id:
+        # Find construction plane by name or entity token
+        target = None
+        for cp in root.constructionPlanes:
+            if cp.name == construction_plane_id or cp.entityToken == construction_plane_id:
+                target = cp
+                break
+        if not target:
+            return {"success": False, "error": f"Construction plane not found: '{construction_plane_id}'"}
+        sk = root.sketches.add(target)
+        return {
+            "success": True,
+            "data": {
+                "sketchId": sk.name,
+                "entityToken": sk.entityToken,
+                "constructionPlane": construction_plane_id,
+            },
+        }
 
     if face_id:
-        # TODO: implement face lookup by ID
-        return {"success": False, "error": "Sketching on faces not yet implemented"}
+        # Find planar face by entity token
+        target = None
+        for body in root.bRepBodies:
+            for face in body.faces:
+                if face.entityToken == face_id:
+                    target = face
+                    break
+            if target:
+                break
+        if not target:
+            return {"success": False, "error": f"Face not found: '{face_id}'"}
+        sk = root.sketches.add(target)
+        return {
+            "success": True,
+            "data": {
+                "sketchId": sk.name,
+                "entityToken": sk.entityToken,
+                "face": face_id,
+            },
+        }
 
+    # Default to standard plane
+    plane_name = plane_name or "xy"
     plane = _get_plane(root, plane_name)
     sk = root.sketches.add(plane)
 
@@ -197,4 +237,133 @@ def finish(app: adsk.core.Application, params: dict) -> dict:
     return {
         "success": True,
         "data": {"sketchId": sk.name, "status": "finished"},
+    }
+
+
+def _find_sketch_entity(sk: adsk.fusion.Sketch, entity_id: str):
+    """Find a sketch entity (curve or point) by entity token."""
+    for curve in sk.sketchCurves:
+        if curve.entityToken == entity_id:
+            return curve
+    for point in sk.sketchPoints:
+        if point.entityToken == entity_id:
+            return point
+    return None
+
+
+def dimension(app: adsk.core.Application, params: dict) -> dict:
+    """Add a dimensional constraint to a sketch entity."""
+    sk = _find_sketch(app, params["sketchId"])
+    entity_id = params["entityId"]
+    value = params["value"]
+    entity_id2 = params.get("entityId2")
+
+    entity = _find_sketch_entity(sk, entity_id)
+    if not entity:
+        return {"success": False, "error": f"Sketch entity not found: '{entity_id}'"}
+
+    dims = sk.sketchDimensions
+
+    if entity_id2:
+        entity2 = _find_sketch_entity(sk, entity_id2)
+        if not entity2:
+            return {"success": False, "error": f"Sketch entity not found: '{entity_id2}'"}
+        # Distance between two entities
+        mid_point = adsk.core.Point3D.create(0, 0, 0)
+        dim = dims.addDistanceDimension(
+            entity, entity2,
+            adsk.fusion.DimensionOrientations.AlignedDimensionOrientation,
+            mid_point,
+        )
+    else:
+        # Single entity dimension - try line length, circle radius, etc.
+        if hasattr(entity, 'length'):
+            # Line - add length dimension
+            mid = entity.geometry.evaluator.getPointAtParameter(0.5)[1] if hasattr(entity.geometry, 'evaluator') else adsk.core.Point3D.create(0, 0, 0)
+            start = entity.startSketchPoint
+            end = entity.endSketchPoint
+            dim = dims.addDistanceDimension(
+                start, end,
+                adsk.fusion.DimensionOrientations.AlignedDimensionOrientation,
+                mid,
+            )
+        elif isinstance(entity, adsk.fusion.SketchCircle):
+            text_point = adsk.core.Point3D.create(
+                entity.centerSketchPoint.geometry.x + entity.radius + 1,
+                entity.centerSketchPoint.geometry.y,
+                0,
+            )
+            dim = dims.addRadialDimension(entity, text_point)
+        else:
+            return {"success": False, "error": "Cannot determine dimension type for this entity"}
+
+    dim.parameter.value = value
+
+    return {
+        "success": True,
+        "data": {
+            "dimensionId": dim.entityToken,
+            "value": value,
+        },
+    }
+
+
+def constraint(app: adsk.core.Application, params: dict) -> dict:
+    """Add a geometric constraint to sketch entities."""
+    sk = _find_sketch(app, params["sketchId"])
+    constraint_type = params["type"]
+    entity_id = params["entityId"]
+    entity_id2 = params.get("entityId2")
+
+    entity = _find_sketch_entity(sk, entity_id)
+    if not entity:
+        return {"success": False, "error": f"Sketch entity not found: '{entity_id}'"}
+
+    entity2 = None
+    if entity_id2:
+        entity2 = _find_sketch_entity(sk, entity_id2)
+        if not entity2:
+            return {"success": False, "error": f"Sketch entity not found: '{entity_id2}'"}
+
+    constraints = sk.geometricConstraints
+
+    try:
+        if constraint_type == "horizontal":
+            c = constraints.addHorizontal(entity)
+        elif constraint_type == "vertical":
+            c = constraints.addVertical(entity)
+        elif constraint_type == "coincident":
+            if not entity2:
+                return {"success": False, "error": "coincident requires entityId2"}
+            c = constraints.addCoincident(entity, entity2)
+        elif constraint_type == "tangent":
+            if not entity2:
+                return {"success": False, "error": "tangent requires entityId2"}
+            c = constraints.addTangent(entity, entity2)
+        elif constraint_type == "perpendicular":
+            if not entity2:
+                return {"success": False, "error": "perpendicular requires entityId2"}
+            c = constraints.addPerpendicular(entity, entity2)
+        elif constraint_type == "parallel":
+            if not entity2:
+                return {"success": False, "error": "parallel requires entityId2"}
+            c = constraints.addParallel(entity, entity2)
+        elif constraint_type == "equal":
+            if not entity2:
+                return {"success": False, "error": "equal requires entityId2"}
+            c = constraints.addEqual(entity, entity2)
+        elif constraint_type == "concentric":
+            if not entity2:
+                return {"success": False, "error": "concentric requires entityId2"}
+            c = constraints.addConcentric(entity, entity2)
+        else:
+            return {"success": False, "error": f"Unknown constraint type: '{constraint_type}'"}
+    except Exception as e:
+        return {"success": False, "error": f"Failed to apply {constraint_type} constraint: {e}"}
+
+    return {
+        "success": True,
+        "data": {
+            "constraintType": constraint_type,
+        },
     }

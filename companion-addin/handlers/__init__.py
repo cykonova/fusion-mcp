@@ -14,6 +14,7 @@ from . import feature
 from . import document
 from . import component
 from . import timeline
+from . import construction
 
 # Expose as attributes so _dispatch can do getattr(handlers, category)
-__all__ = ["viewport", "scene", "sketch", "feature", "document", "component", "timeline"]
+__all__ = ["viewport", "scene", "sketch", "feature", "document", "component", "timeline", "construction"]
