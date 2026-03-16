@@ -21,10 +21,10 @@ export function registerSketchTools(server: McpServer, bridge: FusionBridge): vo
     description: "Add a line to a sketch between two points. Coordinates are in cm.",
     inputSchema: {
       sketchId: z.string().describe("Sketch ID"),
-      startX: z.number().describe("Start X (cm)"),
-      startY: z.number().describe("Start Y (cm)"),
-      endX: z.number().describe("End X (cm)"),
-      endY: z.number().describe("End Y (cm)"),
+      startX: z.coerce.number().describe("Start X (cm)"),
+      startY: z.coerce.number().describe("Start Y (cm)"),
+      endX: z.coerce.number().describe("End X (cm)"),
+      endY: z.coerce.number().describe("End Y (cm)"),
     },
   }, async (args) => {
     const result = await bridge.call("sketch.line", args);
@@ -35,9 +35,9 @@ export function registerSketchTools(server: McpServer, bridge: FusionBridge): vo
     description: "Add a circle to a sketch. Coordinates are in cm.",
     inputSchema: {
       sketchId: z.string().describe("Sketch ID"),
-      centerX: z.number().describe("Center X (cm)"),
-      centerY: z.number().describe("Center Y (cm)"),
-      radius: z.number().describe("Radius (cm)"),
+      centerX: z.coerce.number().describe("Center X (cm)"),
+      centerY: z.coerce.number().describe("Center Y (cm)"),
+      radius: z.coerce.number().describe("Radius (cm)"),
     },
   }, async (args) => {
     const result = await bridge.call("sketch.circle", args);
@@ -48,10 +48,10 @@ export function registerSketchTools(server: McpServer, bridge: FusionBridge): vo
     description: "Add a rectangle to a sketch defined by two corner points. Coordinates are in cm.",
     inputSchema: {
       sketchId: z.string().describe("Sketch ID"),
-      x1: z.number().describe("First corner X (cm)"),
-      y1: z.number().describe("First corner Y (cm)"),
-      x2: z.number().describe("Second corner X (cm)"),
-      y2: z.number().describe("Second corner Y (cm)"),
+      x1: z.coerce.number().describe("First corner X (cm)"),
+      y1: z.coerce.number().describe("First corner Y (cm)"),
+      x2: z.coerce.number().describe("Second corner X (cm)"),
+      y2: z.coerce.number().describe("Second corner Y (cm)"),
     },
   }, async (args) => {
     const result = await bridge.call("sketch.rectangle", args);
@@ -63,12 +63,12 @@ export function registerSketchTools(server: McpServer, bridge: FusionBridge): vo
     inputSchema: {
       sketchId: z.string().describe("Sketch ID"),
       mode: z.enum(["three_point", "center_point"]).describe("Arc creation mode"),
-      startX: z.number().describe("Start point X (cm)"),
-      startY: z.number().describe("Start point Y (cm)"),
-      midOrCenterX: z.number().describe("Mid point X (three_point) or center X (center_point) in cm"),
-      midOrCenterY: z.number().describe("Mid point Y (three_point) or center Y (center_point) in cm"),
-      endXOrSweep: z.number().describe("End point X in cm (three_point) or sweep angle in degrees (center_point)"),
-      endY: z.number().optional().describe("End point Y in cm (three_point mode only)"),
+      startX: z.coerce.number().describe("Start point X (cm)"),
+      startY: z.coerce.number().describe("Start point Y (cm)"),
+      midOrCenterX: z.coerce.number().describe("Mid point X (three_point) or center X (center_point) in cm"),
+      midOrCenterY: z.coerce.number().describe("Mid point Y (three_point) or center Y (center_point) in cm"),
+      endXOrSweep: z.coerce.number().describe("End point X in cm (three_point) or sweep angle in degrees (center_point)"),
+      endY: z.coerce.number().optional().describe("End point Y in cm (three_point mode only)"),
     },
   }, async (args) => {
     const result = await bridge.call("sketch.arc", args);
@@ -80,8 +80,8 @@ export function registerSketchTools(server: McpServer, bridge: FusionBridge): vo
     inputSchema: {
       sketchId: z.string().describe("Sketch ID"),
       points: z.array(z.object({
-        x: z.number().describe("X coordinate (cm)"),
-        y: z.number().describe("Y coordinate (cm)"),
+        x: z.coerce.number().describe("X coordinate (cm)"),
+        y: z.coerce.number().describe("Y coordinate (cm)"),
       })).min(2).describe("Control points for the spline"),
     },
   }, async (args) => {

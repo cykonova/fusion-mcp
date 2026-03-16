@@ -118,22 +118,15 @@ def axis(app: adsk.core.Application, params: dict) -> dict:
     axis_input = axes.createInput()
 
     if mode == "two_points":
-        p1 = adsk.core.Point3D.create(
-            params["point1X"], params["point1Y"], params["point1Z"]
-        )
-        p2 = adsk.core.Point3D.create(
-            params["point2X"], params["point2Y"], params["point2Z"]
-        )
-        axis_input.setByTwoPoints(
-            adsk.fusion.ConstructionPoint.cast(None),  # unused
-            adsk.fusion.ConstructionPoint.cast(None),
-        )
-        # Two-point axis via line
-        axis_input.setByLine(
-            adsk.core.InfiniteLine3D.create(p1, adsk.core.Vector3D.create(
-                p2.x - p1.x, p2.y - p1.y, p2.z - p1.z
-            ))
-        )
+        # FIXME: Fusion's ConstructionAxisInput API doesn't accept arbitrary Point3D
+        # or InfiniteLine3D for axis creation. It requires actual geometry entities
+        # (ConstructionPoints from sketch points, etc.). For standard axes, use
+        # circular pattern's built-in "x"/"y"/"z" support instead.
+        return {
+            "success": False,
+            "error": "two_points mode is not yet supported. Use 'edge' mode with a body edge, "
+                     "'perpendicular_to_face' mode, or pass 'x'/'y'/'z' directly to circular pattern.",
+        }
     elif mode == "edge":
         edge_id = params.get("edgeId")
         if not edge_id:

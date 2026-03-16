@@ -27,10 +27,10 @@ export function registerViewportTools(server: McpServer, bridge: FusionBridge): 
         "front", "back", "left", "right", "top", "bottom", "iso",
       ]).optional().describe("Named standard view"),
       eye: z.object({
-        x: z.number(), y: z.number(), z: z.number(),
+        x: z.coerce.number(), y: z.coerce.number(), z: z.coerce.number(),
       }).optional().describe("Custom camera eye position"),
       target: z.object({
-        x: z.number(), y: z.number(), z: z.number(),
+        x: z.coerce.number(), y: z.coerce.number(), z: z.coerce.number(),
       }).optional().describe("Custom camera target position"),
     },
   }, async ({ named, eye, target }) => {
@@ -72,8 +72,8 @@ export function registerViewportTools(server: McpServer, bridge: FusionBridge): 
   server.registerTool("fusion_orbit", {
     description: "Rotate the viewport camera by delta angles (degrees) for fine-tuning a view",
     inputSchema: {
-      deltaYaw: z.number().default(0).describe("Horizontal rotation in degrees"),
-      deltaPitch: z.number().default(0).describe("Vertical rotation in degrees"),
+      deltaYaw: z.coerce.number().default(0).describe("Horizontal rotation in degrees"),
+      deltaPitch: z.coerce.number().default(0).describe("Vertical rotation in degrees"),
     },
   }, async ({ deltaYaw, deltaPitch }) => {
     const result = await bridge.call("viewport.orbit", { deltaYaw, deltaPitch });

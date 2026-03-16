@@ -300,8 +300,8 @@ def sweep(app: adsk.core.Application, params: dict) -> dict:
             "error": f"Path curve index {path_curve_index} out of range",
         }
 
-    # Create a path from the sketch curve
-    path = root.features.createPath(path_sk.sketchCurves.item(path_curve_index))
+    # Create a path from the sketch curve, chaining connected curves
+    path = root.features.createPath(path_sk.sketchCurves.item(path_curve_index), True)
 
     operation = _operation_enum(params.get("operation", "new_body"))
 

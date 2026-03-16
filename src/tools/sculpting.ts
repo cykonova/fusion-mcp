@@ -8,7 +8,7 @@ export function registerSculptingTools(server: McpServer, bridge: FusionBridge):
     description: "Loft between two or more sketch profiles to create a blended 3D body. Essential for tapered limb segments, torso shaping, and organic transitions between cross-sections.",
     inputSchema: {
       sketchIds: z.array(z.string()).min(2).describe("Sketch IDs containing profiles to loft between (in order)"),
-      profileIndices: z.array(z.number()).optional()
+      profileIndices: z.array(z.coerce.number()).optional()
         .describe("Profile index for each sketch (defaults to 0 for each)"),
       operation: z.enum(["new_body", "join", "cut", "intersect"]).default("new_body")
         .describe("Boolean operation type"),
@@ -23,9 +23,9 @@ export function registerSculptingTools(server: McpServer, bridge: FusionBridge):
     description: "Sweep a sketch profile along a path to create a 3D body. Use for wiring channels, curved frame rails, and tube-like structures.",
     inputSchema: {
       profileSketchId: z.string().describe("Sketch ID containing the profile to sweep"),
-      profileIndex: z.number().default(0).describe("Profile index within the sketch"),
+      profileIndex: z.coerce.number().default(0).describe("Profile index within the sketch"),
       pathSketchId: z.string().describe("Sketch ID containing the sweep path"),
-      pathCurveIndex: z.number().default(0).describe("Curve index in the path sketch"),
+      pathCurveIndex: z.coerce.number().default(0).describe("Starting curve index in the path sketch (connected curves are automatically chained)"),
       operation: z.enum(["new_body", "join", "cut", "intersect"]).default("new_body")
         .describe("Boolean operation type"),
     },
@@ -38,7 +38,7 @@ export function registerSculptingTools(server: McpServer, bridge: FusionBridge):
     description: "Hollow out a solid body with uniform wall thickness. Select faces to remove (open faces). Essential for creating enclosures and cavities for electronics.",
     inputSchema: {
       bodyId: z.string().describe("Body ID to shell"),
-      thickness: z.number().describe("Wall thickness (cm)"),
+      thickness: z.coerce.number().describe("Wall thickness (cm)"),
       removeFaceIds: z.array(z.string()).optional()
         .describe("Face IDs to remove (creates openings). Omit to shell without openings."),
     },
@@ -68,11 +68,11 @@ export function registerSculptingTools(server: McpServer, bridge: FusionBridge):
     inputSchema: {
       entityIds: z.array(z.string()).min(1).describe("Body or feature IDs to pattern"),
       directionOneAxis: z.enum(["x", "y", "z"]).describe("First direction axis"),
-      directionOneCount: z.number().min(1).describe("Number of instances in first direction"),
-      directionOneSpacing: z.number().describe("Spacing between instances in first direction (cm)"),
+      directionOneCount: z.coerce.number().min(1).describe("Number of instances in first direction"),
+      directionOneSpacing: z.coerce.number().describe("Spacing between instances in first direction (cm)"),
       directionTwoAxis: z.enum(["x", "y", "z"]).optional().describe("Second direction axis"),
-      directionTwoCount: z.number().optional().describe("Number of instances in second direction"),
-      directionTwoSpacing: z.number().optional().describe("Spacing in second direction (cm)"),
+      directionTwoCount: z.coerce.number().optional().describe("Number of instances in second direction"),
+      directionTwoSpacing: z.coerce.number().optional().describe("Spacing in second direction (cm)"),
     },
   }, async (args) => {
     const result = await bridge.call("feature.pattern_rectangular", args);
@@ -84,8 +84,8 @@ export function registerSculptingTools(server: McpServer, bridge: FusionBridge):
     inputSchema: {
       entityIds: z.array(z.string()).min(1).describe("Body or feature IDs to pattern"),
       axisId: z.string().describe("Construction axis or edge ID to pattern around"),
-      count: z.number().min(2).describe("Total number of instances (including original)"),
-      totalAngle: z.number().default(360).describe("Total angle to distribute instances over (degrees)"),
+      count: z.coerce.number().min(2).describe("Total number of instances (including original)"),
+      totalAngle: z.coerce.number().default(360).describe("Total angle to distribute instances over (degrees)"),
     },
   }, async (args) => {
     const result = await bridge.call("feature.pattern_circular", args);

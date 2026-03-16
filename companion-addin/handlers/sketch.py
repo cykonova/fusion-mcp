@@ -100,6 +100,16 @@ def create(app: adsk.core.Application, params: dict) -> dict:
     }
 
 
+def _find_coincident_sketch_point(sketch, x: float, y: float, tol: float = 0.001):
+    """Find an existing sketch point at the given coordinates."""
+    for i in range(sketch.sketchPoints.count):
+        sp = sketch.sketchPoints.item(i)
+        geo = sp.geometry
+        if abs(geo.x - x) < tol and abs(geo.y - y) < tol and abs(geo.z) < tol:
+            return sp
+    return None
+
+
 def line(app: adsk.core.Application, params: dict) -> dict:
     """Add a line to a sketch."""
     sk = _find_sketch(app, params["sketchId"])
@@ -108,6 +118,16 @@ def line(app: adsk.core.Application, params: dict) -> dict:
     p1 = adsk.core.Point3D.create(params["startX"], params["startY"], 0)
     p2 = adsk.core.Point3D.create(params["endX"], params["endY"], 0)
     ln = lines.addByTwoPoints(p1, p2)
+
+    # Merge coincident sketch points so curves are truly connected
+    # (required for sweep path chaining, fillet edge detection, etc.)
+    start_match = _find_coincident_sketch_point(sk, params["startX"], params["startY"])
+    if start_match and start_match != ln.startSketchPoint:
+        ln.startSketchPoint.merge(start_match)
+
+    end_match = _find_coincident_sketch_point(sk, params["endX"], params["endY"])
+    if end_match and end_match != ln.endSketchPoint:
+        ln.endSketchPoint.merge(end_match)
 
     return {
         "success": True,

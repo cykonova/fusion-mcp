@@ -7,7 +7,7 @@ export function registerConstructionTools(server: McpServer, bridge: FusionBridg
   server.registerTool("fusion_construction_plane_offset", {
     description: "Create a construction plane offset from an existing plane or planar face. Use for sketching cross-sections at intervals along a limb for loft profiles.",
     inputSchema: {
-      offset: z.number().describe("Offset distance (cm)"),
+      offset: z.coerce.number().describe("Offset distance (cm)"),
       fromPlane: z.enum(["xy", "xz", "yz"]).optional()
         .describe("Standard plane to offset from"),
       fromFaceId: z.string().optional()
@@ -21,7 +21,7 @@ export function registerConstructionTools(server: McpServer, bridge: FusionBridg
   server.registerTool("fusion_construction_plane_at_angle", {
     description: "Create a construction plane at an angle to an existing plane, rotating around an edge or axis. Use for angled mounting surfaces and joint interfaces.",
     inputSchema: {
-      angle: z.number().describe("Angle in degrees"),
+      angle: z.coerce.number().describe("Angle in degrees"),
       edgeId: z.string().describe("Edge or axis ID to rotate around"),
       fromPlane: z.enum(["xy", "xz", "yz"]).optional()
         .describe("Standard plane to angle from"),
@@ -34,15 +34,9 @@ export function registerConstructionTools(server: McpServer, bridge: FusionBridg
   });
 
   server.registerTool("fusion_construction_axis", {
-    description: "Create a construction axis. Use for revolve operations, circular pattern centers, and reference geometry.",
+    description: "Create a construction axis from an edge or face normal. For standard axes (x/y/z), use circular pattern's built-in axis support instead.",
     inputSchema: {
-      mode: z.enum(["two_points", "edge", "perpendicular_to_face"]).describe("Axis creation mode"),
-      point1X: z.number().optional().describe("First point X (two_points mode, cm)"),
-      point1Y: z.number().optional().describe("First point Y (two_points mode, cm)"),
-      point1Z: z.number().optional().describe("First point Z (two_points mode, cm)"),
-      point2X: z.number().optional().describe("Second point X (two_points mode, cm)"),
-      point2Y: z.number().optional().describe("Second point Y (two_points mode, cm)"),
-      point2Z: z.number().optional().describe("Second point Z (two_points mode, cm)"),
+      mode: z.enum(["edge", "perpendicular_to_face"]).describe("Axis creation mode"),
       edgeId: z.string().optional().describe("Edge ID (edge mode)"),
       faceId: z.string().optional().describe("Face ID (perpendicular_to_face mode)"),
     },
@@ -56,7 +50,7 @@ export function registerConstructionTools(server: McpServer, bridge: FusionBridg
     inputSchema: {
       sketchId: z.string().describe("Sketch ID"),
       entityId: z.string().describe("Sketch entity ID to dimension"),
-      value: z.number().describe("Dimension value (cm)"),
+      value: z.coerce.number().describe("Dimension value (cm)"),
       entityId2: z.string().optional()
         .describe("Second entity ID for distance-between dimensions"),
     },
