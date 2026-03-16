@@ -1,0 +1,13 @@
+{
+  "autodeskProduct": "Fusion",
+  "type": "addin",
+  "id": "fusion-mcp-bridge",
+  "author": "Jack",
+  "description": {
+    "": "Lightweight HTTP bridge for the fusion-mcp MCP server. Exposes Fusion 360 API operations via localhost HTTP."
+  },
+  "version": "0.1.0",
+  "runOnStartup": false,
+  "supportedOS": "windows|mac",
+  "editEnabled": true
+}

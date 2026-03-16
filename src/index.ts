@@ -3,13 +3,15 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { registerTools } from "./tools/index.js";
+import { FusionBridge } from "./bridge/fusion-bridge.js";
 
 const server = new McpServer({
   name: "fusion-mcp",
   version: "0.1.0",
 });
 
-registerTools(server);
+const bridge = new FusionBridge();
+registerTools(server, bridge);
 
 async function main() {
   const transport = new StdioServerTransport();
