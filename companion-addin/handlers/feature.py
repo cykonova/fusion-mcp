@@ -56,11 +56,25 @@ def extrude(app: adsk.core.Application, params: dict) -> dict:
     extrudes = root.features.extrudeFeatures
     ext_input = extrudes.createInput(profile, operation)
 
+    # When cutting/intersecting with multiple bodies, set target body
+    target_body_id = params.get("targetBodyId")
+    if target_body_id and operation in (
+        adsk.fusion.FeatureOperations.CutFeatureOperation,
+        adsk.fusion.FeatureOperations.IntersectFeatureOperation,
+    ):
+        target_body = None
+        for body in root.bRepBodies:
+            if body.name == target_body_id or body.entityToken == target_body_id:
+                target_body = body
+                break
+        if target_body:
+            bodies = adsk.core.ObjectCollection.create()
+            bodies.add(target_body)
+            ext_input.participantBodies = [target_body]
+
     if symmetric:
-        extent = adsk.fusion.SymmetricExtentDefinition.create(
-            adsk.core.ValueInput.createByReal(distance / 2), True
-        )
-        ext_input.setSymmetricExtent(extent, True)
+        half_dist = adsk.core.ValueInput.createByReal(distance / 2)
+        ext_input.setSymmetricExtent(half_dist, True)
     else:
         extent = adsk.fusion.DistanceExtentDefinition.create(
             adsk.core.ValueInput.createByReal(distance)
