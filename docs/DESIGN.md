@@ -2,11 +2,7 @@
 
 ## Overview
 
-An MCP server that gives Claude direct tools to design humanoid Arcadian components in Autodesk Fusion 360. Built as a Node/TypeScript stdio MCP server that bridges to a thin Python companion add-in running inside Fusion 360 via HTTP on localhost.
-
-## Purpose
-
-The Arcadian project (Plasma) needs physical embodiment - humanoid frames, joint housings, shell panels, internal cavities for electronics. This server gives Claude the tools to experiment with 3D design directly in Fusion 360, enabling an iterative design workflow: sketch, extrude, screenshot, evaluate, adjust.
+An MCP server that gives Claude direct tools to design components in Autodesk Fusion 360. Built as a Node/TypeScript stdio MCP server that bridges to a thin Python companion add-in running inside Fusion 360 via HTTP on localhost.
 
 ## Goals
 
@@ -20,8 +16,8 @@ The Arcadian project (Plasma) needs physical embodiment - humanoid frames, joint
 
 ```
 ┌─────────────┐         ┌──────────────────┐         ┌──────────────────────────┐
-│   Claude     │──stdio──│  fusion-mcp      │──HTTP───│  Companion Add-in        │
-│   (Client)   │         │  (Node/TS)       │ local   │  (Python in Fusion 360)  │
+│   Claude    │──stdio──│  fusion-mcp      │──HTTP───│  Companion Add-in        │
+│   (Client)  │         │  (Node/TS)       │ local   │  (Python in Fusion 360)  │
 └─────────────┘         └──────────────────┘         └──────────────────────────┘
                          MCP server                    Thin HTTP server on
                          Typed tools                   daemon thread, queues
@@ -52,34 +48,6 @@ Borrowed from the existing Fusion 360 MCP server's proven pattern:
 4. Main thread processes the queue, executes Fusion API calls
 5. Result is returned to the waiting HTTP handler via a per-request response queue
 
-## Tool Phases
-
-### Phase 1: Eyes & Hands (~25 tools)
-See the scene, control the viewport, basic sketch and 3D operations.
-- **Viewport**: screenshot, set view (named + custom), zoom to fit, visual styles, orbit, visibility toggle
-- **Scene awareness**: document info, list components, list bodies, timeline, measure
-- **Sketch**: create, line, circle, rectangle, arc, spline, get profiles, finish
-- **3D**: extrude, revolve, fillet, chamfer
-- **Document**: new, save, export
-
-### Phase 2: Sculpting (~10 tools)
-Organic forms needed for humanoid shapes.
-- **Advanced 3D**: loft, sweep, shell, mirror, rectangular/circular patterns
-- **Construction geometry**: offset planes, angled planes, axes
-- **Sketch constraints**: dimensions, geometric constraints
-
-### Phase 3: Engineering (~12 tools)
-Parametric design, assembly, and analysis.
-- **Parameters**: create, update, list named parameters
-- **Assembly**: joints, component positioning
-- **Analysis**: section cuts, interference checks, mass properties
-- **Iteration**: undo, redo, suppress/unsuppress, edit features
-
-### Phase 4: Polish (~2 tools)
-Materials and appearance for mass estimation and visualization.
-
-> Full tool specification: see `.agent/tickets/003-DefinePhase1Tools.md`
-
 ## Tech Stack
 
 - **Runtime**: Node.js
@@ -89,12 +57,3 @@ Materials and appearance for mass estimation and visualization.
 - **Package Manager**: npm
 - **Companion add-in**: Python 3 (Fusion 360's embedded interpreter)
 
-## Non-Goals
-
-- Arbitrary Python/code execution
-- MCP tool bridging (calling other MCP tools from Fusion)
-- Script file management
-- Browser automation
-- Database integration
-- AI model proxying
-- CAM/manufacturing (may revisit later)
