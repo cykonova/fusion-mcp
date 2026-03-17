@@ -100,11 +100,69 @@ def setVisualStyle(app: adsk.core.Application, params: dict) -> dict:
 
 
 def toggleVisibility(app: adsk.core.Application, params: dict) -> dict:
-    """Show or hide a body or component by entity ID."""
-    # TODO: implement entity lookup by ID
-    entity_id = params.get("entityId")
+    """Show or hide a body, component, or construction entity by name or entity token."""
+    design = adsk.fusion.Design.cast(app.activeProduct)
+    if not design:
+        return {"success": False, "error": "No active design"}
+
+    root = design.rootComponent
+    entity_id = params.get("entityId", "")
     visible = params.get("visible", True)
-    return {"success": False, "error": "toggleVisibility not yet implemented - needs entity lookup"}
+
+    entity = None
+
+    # Search bodies
+    for body in root.bRepBodies:
+        if body.name == entity_id or body.entityToken == entity_id:
+            entity = body
+            break
+
+    # Search occurrences (components)
+    if not entity:
+        for occ in root.allOccurrences:
+            if occ.component.name == entity_id or occ.entityToken == entity_id:
+                entity = occ
+                break
+
+    # Search construction planes
+    if not entity:
+        for plane in root.constructionPlanes:
+            if plane.name == entity_id or plane.entityToken == entity_id:
+                entity = plane
+                break
+
+    # Search construction axes
+    if not entity:
+        for axis in root.constructionAxes:
+            if axis.name == entity_id or axis.entityToken == entity_id:
+                entity = axis
+                break
+
+    # Search sketches
+    if not entity:
+        for sketch in root.sketches:
+            if sketch.name == entity_id or sketch.entityToken == entity_id:
+                entity = sketch
+                break
+
+    if not entity:
+        return {"success": False, "error": f"Entity not found: '{entity_id}'"}
+
+    # Bodies/occurrences use isVisible; construction geometry and sketches use isLightBulbOn
+    try:
+        entity.isVisible = visible
+    except AttributeError:
+        try:
+            entity.isLightBulbOn = visible
+        except AttributeError:
+            return {"success": False, "error": f"Entity '{entity_id}' does not support visibility toggle"}
+    return {
+        "success": True,
+        "data": {
+            "entityId": entity_id,
+            "visible": visible,
+        },
+    }
 
 
 def orbit(app: adsk.core.Application, params: dict) -> dict:

@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { FusionBridge } from "../bridge/fusion-bridge.js";
+import { zBool } from "./schema.js";
 
 export function registerViewportTools(server: McpServer, bridge: FusionBridge): void {
 
@@ -62,7 +63,7 @@ export function registerViewportTools(server: McpServer, bridge: FusionBridge): 
     description: "Show or hide a specific body or component",
     inputSchema: {
       entityId: z.string().describe("Body or component ID"),
-      visible: z.boolean().describe("Whether to show (true) or hide (false)"),
+      visible: zBool().describe("Whether to show (true) or hide (false)"),
     },
   }, async ({ entityId, visible }) => {
     const result = await bridge.call("viewport.toggleVisibility", { entityId, visible });

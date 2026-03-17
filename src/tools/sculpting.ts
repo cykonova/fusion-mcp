@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { FusionBridge } from "../bridge/fusion-bridge.js";
+import { zBool } from "./schema.js";
 
 export function registerSculptingTools(server: McpServer, bridge: FusionBridge): void {
 
@@ -12,7 +13,7 @@ export function registerSculptingTools(server: McpServer, bridge: FusionBridge):
         .describe("Profile index for each sketch (defaults to 0 for each)"),
       operation: z.enum(["new_body", "join", "cut", "intersect"]).default("new_body")
         .describe("Boolean operation type"),
-      isSolid: z.boolean().default(true).describe("Create solid (true) or surface (false)"),
+      isSolid: zBool().default(true).describe("Create solid (true) or surface (false)"),
     },
   }, async (args) => {
     const result = await bridge.call("feature.loft", args);

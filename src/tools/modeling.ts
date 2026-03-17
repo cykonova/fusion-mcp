@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { FusionBridge } from "../bridge/fusion-bridge.js";
+import { zBool } from "./schema.js";
 
 export function registerModelingTools(server: McpServer, bridge: FusionBridge): void {
 
@@ -10,7 +11,7 @@ export function registerModelingTools(server: McpServer, bridge: FusionBridge): 
       sketchId: z.string().describe("Sketch ID containing the profile"),
       profileIndex: z.coerce.number().default(0).describe("Profile index within the sketch"),
       distance: z.coerce.number().describe("Extrusion distance (cm)"),
-      symmetric: z.boolean().default(false).describe("Extrude symmetrically in both directions"),
+      symmetric: zBool().default(false).describe("Extrude symmetrically in both directions"),
       operation: z.enum(["new_body", "join", "cut", "intersect"]).default("new_body")
         .describe("Boolean operation type"),
       targetBodyId: z.string().optional().describe("Target body for join/cut/intersect operations"),
