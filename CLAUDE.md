@@ -26,7 +26,7 @@ The MCP server runs via stdio. The companion add-in must be installed in Fusion 
 
 Deploy handlers: `cp companion-addin/handlers/*.py <AddIns>/FusionMCPBridge/handlers/`
 
-## Tools (65 across 13 modules)
+## Tools (66 across 13 modules)
 
 | Module | Count | Category |
 |--------|-------|----------|
@@ -42,7 +42,7 @@ Deploy handlers: `cp companion-addin/handlers/*.py <AddIns>/FusionMCPBridge/hand
 | assembly | 3 | Create joint, list joints, move component |
 | material | 2 | Set material, set appearance/color |
 | advanced | 8 | Split body, combine, hole, thicken, offset face, import, scale, thread |
-| document | 7 | Launch, list, close, open, new, save, export |
+| document | 8 | Launch, list, activate, close, open, new, save, export |
 
 ## Key Conventions
 

@@ -19,6 +19,16 @@ export function registerDocumentTools(server: McpServer, bridge: FusionBridge): 
     return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
   });
 
+  server.registerTool("fusion_activate_document", {
+    description: "Switch to a different open Fusion 360 document by name. Use fusion_list_documents to see available documents.",
+    inputSchema: {
+      name: z.string().describe("Document name to activate"),
+    },
+  }, async (args) => {
+    const result = await bridge.call("document.activate", args);
+    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+  });
+
   server.registerTool("fusion_close_document", {
     description: "Close a Fusion 360 document by name, or the active document if no name given.",
     inputSchema: {

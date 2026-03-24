@@ -48,7 +48,7 @@ Borrowed from the existing Fusion 360 MCP server's proven pattern:
 4. Main thread processes the queue, executes Fusion API calls
 5. Result is returned to the waiting HTTP handler via a per-request response queue
 
-## Tools (65)
+## Tools (66)
 
 ### Viewport (6)
 
@@ -168,12 +168,13 @@ Borrowed from the existing Fusion 360 MCP server's proven pattern:
 | `fusion_scale` | Scale a body uniformly or non-uniformly |
 | `fusion_thread` | Add ISO Metric or other thread standards to cylindrical faces |
 
-### Document (7)
+### Document (8)
 
 | Tool | Description |
 |------|-------------|
 | `fusion_launch` | Launch Fusion 360 and wait for add-in readiness |
 | `fusion_list_documents` | List all open documents with save state |
+| `fusion_activate_document` | Switch to a different open document by name |
 | `fusion_close_document` | Close a document by name or the active document |
 | `fusion_open_document` | Open/import a file (.f3d, .step, .stl, etc.) |
 | `fusion_new_document` | Create a new design document |

@@ -90,6 +90,31 @@ def close(app: adsk.core.Application, params: dict) -> dict:
     }
 
 
+def activate(app: adsk.core.Application, params: dict) -> dict:
+    """Switch to a different open document by name."""
+    doc_name = params.get("name")
+    if not doc_name:
+        return {"success": False, "error": "name is required"}
+
+    for i in range(app.documents.count):
+        doc = app.documents.item(i)
+        if doc.name == doc_name:
+            doc.activate()
+            return {
+                "success": True,
+                "data": {
+                    "activatedDocument": doc.name,
+                    "isSaved": doc.isSaved,
+                },
+            }
+
+    available = [app.documents.item(i).name for i in range(app.documents.count)]
+    return {
+        "success": False,
+        "error": f"Document '{doc_name}' not found. Open documents: {available}",
+    }
+
+
 def open(app: adsk.core.Application, params: dict) -> dict:
     """Open a Fusion 360 document from a local file path."""
     import os
