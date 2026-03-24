@@ -26,21 +26,23 @@ The MCP server runs via stdio. The companion add-in must be installed in Fusion 
 
 Deploy handlers: `cp companion-addin/handlers/*.py <AddIns>/FusionMCPBridge/handlers/`
 
-## Tools (49 across 11 modules)
+## Tools (65 across 13 modules)
 
 | Module | Count | Category |
 |--------|-------|----------|
 | viewport | 6 | Screenshot, camera, zoom, orbit, visual style, visibility |
-| scene | 2 | Document info, measure |
+| scene | 6 | Document info, measure, create/list components, list bodies, timeline |
 | sketch | 8 | Create, line, circle, rectangle, arc, spline, profiles, finish |
 | modeling | 4 | Extrude, revolve, fillet, chamfer |
 | sculpting | 6 | Loft, sweep, shell, mirror, rectangular/circular pattern |
-| construction | 3 | Offset plane, angle plane, axis |
+| construction | 5 | Offset plane, angle plane, axis, sketch dimension, sketch constraint |
 | parameters | 3 | Create, update, list user/model parameters |
 | analysis | 3 | Mass properties, interference check, section analysis |
 | iteration | 4 | Undo, redo, suppress feature, edit feature |
 | assembly | 3 | Create joint, list joints, move component |
-| document | 3 | New, save, export |
+| material | 2 | Set material, set appearance/color |
+| advanced | 8 | Split body, combine, hole, thicken, offset face, import, scale, thread |
+| document | 7 | Launch, list, close, open, new, save, export |
 
 ## Key Conventions
 
