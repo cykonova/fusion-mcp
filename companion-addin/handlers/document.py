@@ -30,6 +30,66 @@ def info(app: adsk.core.Application, params: dict) -> dict:
     }
 
 
+def list_documents(app: adsk.core.Application, params: dict) -> dict:
+    """List all open documents."""
+    docs = []
+    for i in range(app.documents.count):
+        doc = app.documents.item(i)
+        is_active = doc == app.activeDocument
+        docs.append({
+            "name": doc.name,
+            "isSaved": doc.isSaved,
+            "isActive": is_active,
+        })
+
+    return {
+        "success": True,
+        "data": {
+            "count": len(docs),
+            "documents": docs,
+        },
+    }
+
+
+def close(app: adsk.core.Application, params: dict) -> dict:
+    """Close a document by name, or the active document if no name given."""
+    doc_name = params.get("name")
+    save_before_close = params.get("save", False)
+
+    if doc_name:
+        target = None
+        for i in range(app.documents.count):
+            doc = app.documents.item(i)
+            if doc.name == doc_name:
+                target = doc
+                break
+        if not target:
+            available = [app.documents.item(i).name for i in range(app.documents.count)]
+            return {
+                "success": False,
+                "error": f"Document '{doc_name}' not found. Open documents: {available}",
+            }
+    else:
+        target = app.activeDocument
+        if not target:
+            return {"success": False, "error": "No active document"}
+
+    name = target.name
+
+    if save_before_close and target.isSaved:
+        target.save("")
+
+    target.close(save_before_close)
+
+    return {
+        "success": True,
+        "data": {
+            "closedDocument": name,
+            "saved": save_before_close,
+        },
+    }
+
+
 def new(app: adsk.core.Application, params: dict) -> dict:
     """Create a new design document."""
     doc = app.documents.add(adsk.core.DocumentTypes.FusionDesignDocumentType)

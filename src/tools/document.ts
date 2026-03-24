@@ -1,8 +1,27 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { FusionBridge } from "../bridge/fusion-bridge.js";
+import { zBool } from "./schema.js";
 
 export function registerDocumentTools(server: McpServer, bridge: FusionBridge): void {
+
+  server.registerTool("fusion_list_documents", {
+    description: "List all open Fusion 360 documents with their names, save status, and which is active.",
+  }, async () => {
+    const result = await bridge.call("document.list_documents");
+    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+  });
+
+  server.registerTool("fusion_close_document", {
+    description: "Close a Fusion 360 document by name, or the active document if no name given.",
+    inputSchema: {
+      name: z.string().optional().describe("Document name to close (defaults to active document)"),
+      save: zBool().default(false).describe("Save before closing"),
+    },
+  }, async (args) => {
+    const result = await bridge.call("document.close", args);
+    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+  });
 
   server.registerTool("fusion_new_document", {
     description: "Create a new Fusion 360 design document",
