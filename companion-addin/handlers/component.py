@@ -4,6 +4,34 @@ import adsk.core
 import adsk.fusion
 
 
+def create(app: adsk.core.Application, params: dict) -> dict:
+    """Create a new component and return its occurrence."""
+    design = adsk.fusion.Design.cast(app.activeProduct)
+    if not design:
+        return {"success": False, "error": "No active Fusion design"}
+
+    root = design.rootComponent
+    name = params.get("name", "")
+
+    # Create a new occurrence with a new component
+    transform = adsk.core.Matrix3D.create()  # identity = at origin
+    occ = root.occurrences.addNewComponent(transform)
+    comp = occ.component
+
+    if name:
+        comp.name = name
+
+    return {
+        "success": True,
+        "data": {
+            "componentName": comp.name,
+            "componentToken": comp.entityToken,
+            "occurrenceName": occ.name,
+            "occurrenceToken": occ.entityToken,
+        },
+    }
+
+
 def list(app: adsk.core.Application, params: dict) -> dict:
     """List all components in the design hierarchy."""
     design = adsk.fusion.Design.cast(app.activeProduct)

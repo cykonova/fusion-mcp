@@ -12,6 +12,16 @@ export function registerSceneTools(server: McpServer, bridge: FusionBridge): voi
     return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
   });
 
+  server.registerTool("fusion_create_component", {
+    description: "Create a new empty component in the design. Returns the component and its occurrence — use the occurrence name/token for assembly operations (joints, move).",
+    inputSchema: {
+      name: z.string().optional().describe("Component name (e.g. 'UpperArm', 'ServoMount')"),
+    },
+  }, async (args) => {
+    const result = await bridge.call("component.create", args);
+    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+  });
+
   server.registerTool("fusion_list_components", {
     description: "List all components in the active design hierarchy with names, IDs, and nesting",
   }, async () => {
