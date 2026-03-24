@@ -549,3 +549,416 @@ def pattern_circular(app: adsk.core.Application, params: dict) -> dict:
             "featureName": pattern_feat.name,
         },
     }
+
+
+def split_body(app: adsk.core.Application, params: dict) -> dict:
+    """Split a body along a plane into two separate bodies."""
+    root = _get_root(app)
+
+    body = _find_body(root, params["bodyId"])
+    if not body:
+        return {"success": False, "error": f"Body not found: '{params['bodyId']}'"}
+
+    # Resolve splitting tool (plane)
+    plane_name = params.get("plane")
+    plane_id = params.get("planeId")
+
+    if plane_name:
+        plane_map = {
+            "xy": root.xYConstructionPlane,
+            "xz": root.xZConstructionPlane,
+            "yz": root.yZConstructionPlane,
+        }
+        splitting_tool = plane_map.get(plane_name)
+        if not splitting_tool:
+            return {"success": False, "error": f"Unknown plane: '{plane_name}'"}
+    elif plane_id:
+        splitting_tool = None
+        for cp in root.constructionPlanes:
+            if cp.name == plane_id or cp.entityToken == plane_id:
+                splitting_tool = cp
+                break
+        if not splitting_tool:
+            splitting_tool = _find_face(root, plane_id)
+        if not splitting_tool:
+            return {"success": False, "error": f"Splitting plane/face not found: '{plane_id}'"}
+    else:
+        return {"success": False, "error": "Must specify 'plane' (xy/xz/yz) or 'planeId'"}
+
+    split_bodies = root.features.splitBodyFeatures
+    split_input = split_bodies.createInput(
+        body, splitting_tool, True  # True = split tool extends infinitely
+    )
+
+    split_feat = split_bodies.add(split_input)
+    result_bodies = [b.name for b in split_feat.bodies]
+
+    return {
+        "success": True,
+        "data": {
+            "featureId": split_feat.entityToken,
+            "featureName": split_feat.name,
+            "resultBodies": result_bodies,
+        },
+    }
+
+
+def combine_bodies(app: adsk.core.Application, params: dict) -> dict:
+    """Combine two bodies with a boolean operation (join, cut, intersect)."""
+    root = _get_root(app)
+
+    target_body = _find_body(root, params["targetBodyId"])
+    if not target_body:
+        return {"success": False, "error": f"Target body not found: '{params['targetBodyId']}'"}
+
+    tool_body_ids = params["toolBodyIds"]
+    tool_bodies = adsk.core.ObjectCollection.create()
+    for tid in tool_body_ids:
+        tb = _find_body(root, tid)
+        if not tb:
+            return {"success": False, "error": f"Tool body not found: '{tid}'"}
+        tool_bodies.add(tb)
+
+    operation = _operation_enum(params.get("operation", "join"))
+    keep_tools = params.get("keepToolBodies", False)
+
+    combines = root.features.combineFeatures
+    combine_input = combines.createInput(target_body, tool_bodies)
+    combine_input.operation = operation
+    combine_input.isKeepToolBodies = keep_tools
+
+    combine_feat = combines.add(combine_input)
+
+    return {
+        "success": True,
+        "data": {
+            "featureId": combine_feat.entityToken,
+            "featureName": combine_feat.name,
+        },
+    }
+
+
+def hole(app: adsk.core.Application, params: dict) -> dict:
+    """Create a hole feature (simple, counterbore, or countersink)."""
+    import math
+
+    root = _get_root(app)
+
+    face_id = params["faceId"]
+    face = _find_face(root, face_id)
+    if not face:
+        return {"success": False, "error": f"Face not found: '{face_id}'"}
+
+    hole_type = params.get("holeType", "simple")
+    diameter = params["diameter"]
+    depth = params["depth"]
+
+    # Hole position on face
+    position_x = params.get("positionX", 0)
+    position_y = params.get("positionY", 0)
+    point = adsk.core.Point3D.create(position_x, position_y, 0)
+
+    holes = root.features.holeFeatures
+    hole_input = holes.createSimpleInput(adsk.core.ValueInput.createByReal(diameter))
+    hole_input.setPositionByPlaneAndOffsets(face, point)
+    hole_input.setDistanceExtent(adsk.core.ValueInput.createByReal(depth))
+
+    if hole_type == "counterbore":
+        cb_diameter = params.get("counterboreDiameter")
+        cb_depth = params.get("counterboreDepth")
+        if cb_diameter and cb_depth:
+            hole_input.isCounterBored = True
+            hole_input.counterboreDiameter = adsk.core.ValueInput.createByReal(cb_diameter)
+            hole_input.counterboreDepth = adsk.core.ValueInput.createByReal(cb_depth)
+    elif hole_type == "countersink":
+        cs_diameter = params.get("countersinkDiameter")
+        cs_angle = params.get("countersinkAngle", 90)
+        if cs_diameter:
+            hole_input.isCounterSunk = True
+            hole_input.countersinkDiameter = adsk.core.ValueInput.createByReal(cs_diameter)
+            hole_input.countersinkAngle = adsk.core.ValueInput.createByReal(math.radians(cs_angle))
+
+    hole_feat = holes.add(hole_input)
+
+    return {
+        "success": True,
+        "data": {
+            "featureId": hole_feat.entityToken,
+            "featureName": hole_feat.name,
+        },
+    }
+
+
+def thicken(app: adsk.core.Application, params: dict) -> dict:
+    """Thicken a surface body into a solid with uniform thickness."""
+    root = _get_root(app)
+
+    body = _find_body(root, params["bodyId"])
+    if not body:
+        return {"success": False, "error": f"Body not found: '{params['bodyId']}'"}
+
+    if body.isSolid:
+        return {"success": False, "error": f"Body '{params['bodyId']}' is already solid. Thicken works on surface bodies."}
+
+    thickness = params["thickness"]
+    symmetric = params.get("symmetric", False)
+    operation = _operation_enum(params.get("operation", "new_body"))
+
+    faces = adsk.core.ObjectCollection.create()
+    for face in body.faces:
+        faces.add(face)
+
+    thicken_feats = root.features.thickenFeatures
+    thicken_input = thicken_feats.createInput(
+        faces,
+        adsk.core.ValueInput.createByReal(thickness),
+        symmetric,
+        operation,
+    )
+
+    thicken_feat = thicken_feats.add(thicken_input)
+    body_names = [b.name for b in thicken_feat.bodies]
+
+    return {
+        "success": True,
+        "data": {
+            "featureId": thicken_feat.entityToken,
+            "featureName": thicken_feat.name,
+            "bodies": body_names,
+        },
+    }
+
+
+def offset_face(app: adsk.core.Application, params: dict) -> dict:
+    """Offset (push/pull) one or more faces by a distance."""
+    root = _get_root(app)
+
+    face_ids = params["faceIds"]
+    distance = params["distance"]
+
+    faces = adsk.core.ObjectCollection.create()
+    for fid in face_ids:
+        face = _find_face(root, fid)
+        if not face:
+            return {"success": False, "error": f"Face not found: '{fid}'"}
+        faces.add(face)
+
+    offset_feats = root.features.offsetFeatures
+    offset_input = offset_feats.createInput(
+        faces,
+        adsk.core.ValueInput.createByReal(distance),
+        adsk.fusion.FeatureOperations.NewBodyFeatureOperation,
+    )
+
+    offset_feat = offset_feats.add(offset_input)
+
+    return {
+        "success": True,
+        "data": {
+            "featureId": offset_feat.entityToken,
+            "featureName": offset_feat.name,
+        },
+    }
+
+
+def import_body(app: adsk.core.Application, params: dict) -> dict:
+    """Import geometry from a file into the current design."""
+    import os
+
+    file_path = params.get("filePath")
+    if not file_path:
+        return {"success": False, "error": "filePath is required"}
+
+    file_path = os.path.expanduser(file_path)
+    if not os.path.exists(file_path):
+        return {"success": False, "error": f"File not found: '{file_path}'"}
+
+    ext = os.path.splitext(file_path)[1].lower()
+    import_mgr = app.importManager
+
+    if ext in (".step", ".stp"):
+        options = import_mgr.createSTEPImportOptions(file_path)
+    elif ext in (".iges", ".igs"):
+        options = import_mgr.createIGESImportOptions(file_path)
+    elif ext in (".sat",):
+        options = import_mgr.createSATImportOptions(file_path)
+    elif ext in (".smt",):
+        options = import_mgr.createSMTImportOptions(file_path)
+    elif ext in (".stl",):
+        options = import_mgr.createSTLImportOptions(file_path)
+    elif ext in (".f3d", ".f3z"):
+        options = import_mgr.createFusionArchiveImportOptions(file_path)
+    else:
+        return {
+            "success": False,
+            "error": f"Unsupported file type: '{ext}'. Supported: .step, .stp, .iges, .igs, .sat, .smt, .stl, .f3d, .f3z",
+        }
+
+    root = _get_root(app)
+    import_mgr.importToTarget(options, root)
+
+    bodies = [b.name for b in root.bRepBodies]
+    return {
+        "success": True,
+        "data": {
+            "filePath": file_path,
+            "bodyCount": root.bRepBodies.count,
+            "bodies": bodies,
+        },
+    }
+
+
+def scale(app: adsk.core.Application, params: dict) -> dict:
+    """Scale a body uniformly or non-uniformly."""
+    root = _get_root(app)
+
+    body = _find_body(root, params["bodyId"])
+    if not body:
+        return {"success": False, "error": f"Body not found: '{params['bodyId']}'"}
+
+    factor = params.get("factor")
+    factor_x = params.get("factorX")
+    factor_y = params.get("factorY")
+    factor_z = params.get("factorZ")
+
+    entities = adsk.core.ObjectCollection.create()
+    entities.add(body)
+
+    bbox = body.boundingBox
+    center = adsk.core.Point3D.create(
+        (bbox.minPoint.x + bbox.maxPoint.x) / 2,
+        (bbox.minPoint.y + bbox.maxPoint.y) / 2,
+        (bbox.minPoint.z + bbox.maxPoint.z) / 2,
+    )
+
+    scales = root.features.scaleFeatures
+    scale_input = scales.createInput(entities, center, adsk.core.ValueInput.createByReal(factor or 1))
+
+    if factor_x is not None or factor_y is not None or factor_z is not None:
+        scale_input.setToNonUniform(
+            adsk.core.ValueInput.createByReal(factor_x or 1),
+            adsk.core.ValueInput.createByReal(factor_y or 1),
+            adsk.core.ValueInput.createByReal(factor_z or 1),
+        )
+
+    scale_feat = scales.add(scale_input)
+
+    return {
+        "success": True,
+        "data": {
+            "featureId": scale_feat.entityToken,
+            "featureName": scale_feat.name,
+        },
+    }
+
+
+def thread(app: adsk.core.Application, params: dict) -> dict:
+    """Add threads to a cylindrical face."""
+    root = _get_root(app)
+
+    face_id = params["faceId"]
+    face = _find_face(root, face_id)
+    if not face:
+        return {"success": False, "error": f"Face not found: '{face_id}'"}
+
+    is_internal = params.get("isInternal", True)
+    full_length = params.get("fullLength", True)
+    thread_length = params.get("length")
+
+    threads = root.features.threadFeatures
+    thread_data_query = threads.threadDataQuery
+
+    thread_types = thread_data_query.allThreadTypes
+    if thread_types.count == 0:
+        return {"success": False, "error": "No thread types available"}
+
+    # Use specified type or default to ISO Metric
+    thread_type_name = params.get("threadType")
+    thread_type = None
+    if thread_type_name:
+        for i in range(thread_types.count):
+            if thread_types.item(i).lower() == thread_type_name.lower():
+                thread_type = thread_types.item(i)
+                break
+        if not thread_type:
+            available = [thread_types.item(i) for i in range(thread_types.count)]
+            return {
+                "success": False,
+                "error": f"Thread type '{thread_type_name}' not found. Available: {available}",
+            }
+    else:
+        for i in range(thread_types.count):
+            t = thread_types.item(i)
+            if "ISO" in t and "Metric" in t:
+                thread_type = t
+                break
+        if not thread_type:
+            thread_type = thread_types.item(0)
+
+    # Get available sizes
+    sizes = thread_data_query.allSizes(thread_type)
+    thread_size = params.get("size")
+    if thread_size:
+        found = False
+        for i in range(sizes.count):
+            if sizes.item(i) == thread_size:
+                found = True
+                break
+        if not found:
+            available = [sizes.item(i) for i in range(min(sizes.count, 20))]
+            return {
+                "success": False,
+                "error": f"Thread size '{thread_size}' not found. Some available: {available}",
+            }
+    else:
+        thread_size = sizes.item(0)
+
+    # Get designations
+    designations = thread_data_query.allDesignations(thread_type, thread_size)
+    if designations.count == 0:
+        return {"success": False, "error": f"No thread designations for {thread_type} {thread_size}"}
+
+    designation = params.get("designation")
+    if designation:
+        found = False
+        for i in range(designations.count):
+            if designations.item(i) == designation:
+                found = True
+                break
+        if not found:
+            available = [designations.item(i) for i in range(designations.count)]
+            return {
+                "success": False,
+                "error": f"Designation '{designation}' not found. Available: {available}",
+            }
+    else:
+        designation = designations.item(0)
+
+    # Get thread classes
+    classes = thread_data_query.allClasses(is_internal, thread_type, designation)
+    thread_class = classes.item(0) if classes.count > 0 else ""
+
+    thread_info = threads.createThreadInfo(is_internal, thread_type, designation, thread_class)
+
+    faces_coll = adsk.core.ObjectCollection.create()
+    faces_coll.add(face)
+
+    thread_input = threads.createInput(faces_coll, thread_info)
+    thread_input.isFullLength = full_length
+
+    if not full_length and thread_length:
+        thread_input.threadLength = adsk.core.ValueInput.createByReal(thread_length)
+
+    thread_feat = threads.add(thread_input)
+
+    return {
+        "success": True,
+        "data": {
+            "featureId": thread_feat.entityToken,
+            "featureName": thread_feat.name,
+            "threadType": thread_type,
+            "size": thread_size,
+            "designation": designation,
+            "isInternal": is_internal,
+        },
+    }
