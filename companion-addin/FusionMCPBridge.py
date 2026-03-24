@@ -216,11 +216,10 @@ def run(context):
         _http_thread = threading.Thread(target=_http_server.serve_forever, daemon=True)
         _http_thread.start()
 
-        _ui.messageBox(f"FusionMCPBridge running on http://127.0.0.1:{HTTP_PORT}")
+        _app.log(f"FusionMCPBridge: listening on http://127.0.0.1:{HTTP_PORT}")
 
     except Exception:
-        if _ui:
-            _ui.messageBox(f"FusionMCPBridge failed to start:\n{traceback.format_exc()}")
+        _app.log(f"FusionMCPBridge: failed to start — {traceback.format_exc()}")
 
 
 def stop(context):

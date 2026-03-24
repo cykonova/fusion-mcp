@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "fusion360": {
-      "command": "node",
-      "args": ["/Users/jack/Source/fusion-mcp/dist/index.js"]
-    }
-  }
-}
