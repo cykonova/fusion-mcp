@@ -5,6 +5,13 @@ import { zBool } from "./schema.js";
 
 export function registerDocumentTools(server: McpServer, bridge: FusionBridge): void {
 
+  server.registerTool("fusion_launch", {
+    description: "Launch Fusion 360 and wait for the companion add-in to become ready. If Fusion is already running, returns immediately. Use this before other tools if Fusion might not be running.",
+  }, async () => {
+    const result = await bridge.ensureRunning();
+    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+  });
+
   server.registerTool("fusion_list_documents", {
     description: "List all open Fusion 360 documents with their names, save status, and which is active.",
   }, async () => {
@@ -20,6 +27,16 @@ export function registerDocumentTools(server: McpServer, bridge: FusionBridge): 
     },
   }, async (args) => {
     const result = await bridge.call("document.close", args);
+    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+  });
+
+  server.registerTool("fusion_open_document", {
+    description: "Open a Fusion 360 document from a local file path. Supports .f3d, .f3z, .step, .stp, .iges, .igs, .sat, .smt, .stl files.",
+    inputSchema: {
+      filePath: z.string().describe("Path to the file to open"),
+    },
+  }, async (args) => {
+    const result = await bridge.call("document.open", args);
     return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
   });
 

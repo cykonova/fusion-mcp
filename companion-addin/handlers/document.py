@@ -90,6 +90,57 @@ def close(app: adsk.core.Application, params: dict) -> dict:
     }
 
 
+def open(app: adsk.core.Application, params: dict) -> dict:
+    """Open a Fusion 360 document from a local file path."""
+    import os
+
+    file_path = params.get("filePath")
+    if not file_path:
+        return {"success": False, "error": "filePath is required"}
+
+    # Expand user home dir
+    file_path = os.path.expanduser(file_path)
+
+    if not os.path.exists(file_path):
+        return {"success": False, "error": f"File not found: '{file_path}'"}
+
+    ext = os.path.splitext(file_path)[1].lower()
+    if ext not in (".f3d", ".f3z", ".step", ".stp", ".iges", ".igs", ".sat", ".smt", ".stl"):
+        return {
+            "success": False,
+            "error": f"Unsupported file type: '{ext}'. Supported: .f3d, .f3z, .step, .stp, .iges, .igs, .sat, .smt, .stl",
+        }
+
+    import_mgr = app.importManager
+
+    if ext in (".f3d", ".f3z"):
+        options = import_mgr.createFusionArchiveImportOptions(file_path)
+    elif ext in (".step", ".stp"):
+        options = import_mgr.createSTEPImportOptions(file_path)
+    elif ext in (".iges", ".igs"):
+        options = import_mgr.createIGESImportOptions(file_path)
+    elif ext in (".sat",):
+        options = import_mgr.createSATImportOptions(file_path)
+    elif ext in (".smt",):
+        options = import_mgr.createSMTImportOptions(file_path)
+    elif ext in (".stl",):
+        options = import_mgr.createSTLImportOptions(file_path)
+    else:
+        return {"success": False, "error": f"No import handler for '{ext}'"}
+
+    doc = import_mgr.importToNewDocument(options)
+    if not doc:
+        return {"success": False, "error": f"Failed to import '{file_path}'"}
+
+    return {
+        "success": True,
+        "data": {
+            "name": doc.name,
+            "filePath": file_path,
+        },
+    }
+
+
 def new(app: adsk.core.Application, params: dict) -> dict:
     """Create a new design document."""
     doc = app.documents.add(adsk.core.DocumentTypes.FusionDesignDocumentType)
