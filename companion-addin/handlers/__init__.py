@@ -19,6 +19,7 @@ from . import parameter
 from . import analysis
 from . import iteration
 from . import assembly
+from . import material
 
 # Expose as attributes so _dispatch can do getattr(handlers, category)
-__all__ = ["viewport", "scene", "sketch", "feature", "document", "component", "timeline", "construction", "parameter", "analysis", "iteration", "assembly"]
+__all__ = ["viewport", "scene", "sketch", "feature", "document", "component", "timeline", "construction", "parameter", "analysis", "iteration", "assembly", "material"]

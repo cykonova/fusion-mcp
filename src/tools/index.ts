@@ -11,6 +11,7 @@ import { registerParameterTools } from "./parameters.js";
 import { registerAnalysisTools } from "./analysis.js";
 import { registerIterationTools } from "./iteration.js";
 import { registerAssemblyTools } from "./assembly.js";
+import { registerMaterialTools } from "./material.js";
 
 export function registerTools(server: McpServer, bridge: FusionBridge): void {
   registerViewportTools(server, bridge);
@@ -23,5 +24,6 @@ export function registerTools(server: McpServer, bridge: FusionBridge): void {
   registerAnalysisTools(server, bridge);
   registerIterationTools(server, bridge);
   registerAssemblyTools(server, bridge);
+  registerMaterialTools(server, bridge);
   registerDocumentTools(server, bridge);
 }
