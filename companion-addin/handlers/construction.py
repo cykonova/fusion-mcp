@@ -118,10 +118,9 @@ def axis(app: adsk.core.Application, params: dict) -> dict:
     axis_input = axes.createInput()
 
     if mode == "two_points":
-        # FIXME: Fusion's ConstructionAxisInput API doesn't accept arbitrary Point3D
-        # or InfiniteLine3D for axis creation. It requires actual geometry entities
-        # (ConstructionPoints from sketch points, etc.). For standard axes, use
-        # circular pattern's built-in "x"/"y"/"z" support instead.
+        # Fusion's ConstructionAxisInput API requires actual geometry entities
+        # (sketch points, edges, etc.) — it cannot accept arbitrary Point3D.
+        # For standard axes, use circular pattern's built-in "x"/"y"/"z" support.
         return {
             "success": False,
             "error": "two_points mode is not yet supported. Use 'edge' mode with a body edge, "

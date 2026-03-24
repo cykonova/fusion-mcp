@@ -70,15 +70,58 @@ def setView(app: adsk.core.Application, params: dict) -> dict:
 def zoomToFit(app: adsk.core.Application, params: dict) -> dict:
     """Fit all geometry or a specific entity in the viewport."""
     viewport = app.activeViewport
-    camera = viewport.camera
-    camera.isFitView = True
-    viewport.camera = camera
+    entity_id = params.get("entityId")
 
-    # FIXME: entityId-based zoom requires finding the entity and using
-    # camera.target = entity bounding box center. Implement when we have
-    # a reliable entity lookup utility.
+    if entity_id:
+        # Zoom to a specific entity by centering camera on its bounding box
+        design = adsk.fusion.Design.cast(app.activeProduct)
+        if not design:
+            return {"success": False, "error": "No active Fusion design"}
 
-    return {"success": True, "data": {"action": "fit_all"}}
+        root = design.rootComponent
+        entity = None
+
+        # Find entity (body by name/token)
+        for body in root.bRepBodies:
+            if body.name == entity_id or body.entityToken == entity_id:
+                entity = body
+                break
+
+        if not entity:
+            for occ in root.allOccurrences:
+                for body in occ.component.bRepBodies:
+                    if body.name == entity_id or body.entityToken == entity_id:
+                        entity = body
+                        break
+                if entity:
+                    break
+
+        if not entity or not hasattr(entity, 'boundingBox'):
+            return {"success": False, "error": f"Entity not found or has no bounding box: '{entity_id}'"}
+
+        bbox = entity.boundingBox
+        center_x = (bbox.minPoint.x + bbox.maxPoint.x) / 2
+        center_y = (bbox.minPoint.y + bbox.maxPoint.y) / 2
+        center_z = (bbox.minPoint.z + bbox.maxPoint.z) / 2
+
+        camera = viewport.camera
+        camera.target = adsk.core.Point3D.create(center_x, center_y, center_z)
+        camera.isFitView = True
+        viewport.camera = camera
+
+        return {
+            "success": True,
+            "data": {
+                "action": "fit_entity",
+                "entityId": entity_id,
+                "center": {"x": round(center_x, 4), "y": round(center_y, 4), "z": round(center_z, 4)},
+            },
+        }
+    else:
+        camera = viewport.camera
+        camera.isFitView = True
+        viewport.camera = camera
+        return {"success": True, "data": {"action": "fit_all"}}
 
 
 def setVisualStyle(app: adsk.core.Application, params: dict) -> dict:
